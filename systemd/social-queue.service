@@ -1,0 +1,15 @@
+[Unit]
+Description=Social Queue - Markdown-powered social media publisher
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/social-queue
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=10
+EnvironmentFile=/opt/social-queue/.env
+
+[Install]
+WantedBy=multi-user.target
