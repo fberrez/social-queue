@@ -1,0 +1,47 @@
+name: LinkedIn Token Expiry Check
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Every Monday at 9am UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check token validity
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: Bearer $LINKEDIN_ACCESS_TOKEN" \
+            https://api.linkedin.com/v2/userinfo)
+
+          if [ "$STATUS" != "200" ]; then
+            # Check if an issue already exists
+            EXISTING=$(gh issue list --repo ${{ github.repository }} \
+              --label "linkedin-token" --state open --json number --jq 'length')
+
+            if [ "$EXISTING" = "0" ]; then
+              gh issue create --repo ${{ github.repository }} \
+                --title "LinkedIn token expired — re-authenticate" \
+                --label "linkedin-token" \
+                --body "$(cat <<'EOF'
+          The LinkedIn OAuth token has expired or is invalid (HTTP status: $STATUS).
+
+          To refresh it, run locally:
+
+          ```bash
+          pnpm linkedin:auth
+          ```
+
+          This will open your browser, re-authenticate with LinkedIn, update .env,
+          update GitHub secrets, and trigger a redeploy automatically.
+          EOF
+          )"
+            fi
+            echo "::warning::LinkedIn token is expired or invalid (HTTP $STATUS)"
+          else
+            echo "LinkedIn token is valid"
+          fi
