@@ -17,6 +17,8 @@ queue/    ->    [worker polls every 60s]    ->    sent/
 
 ## Post format
 
+### Text-only post (flat file)
+
 ```markdown
 ---
 platforms:
@@ -29,8 +31,39 @@ scheduledAt: 2026-03-14T10:00:00Z  # optional, omit for immediate
 Post content here. Supports **markdown**.
 ```
 
+### Post with images (subdirectory)
+
+Place the markdown file and images together in a subdirectory of `queue/`:
+
+```
+queue/
+  my-post/
+    post.md
+    photo.jpg
+    banner.png
+```
+
+```markdown
+---
+platforms:
+  - bluesky
+  - linkedin
+images:
+  - path: photo.jpg
+    alt: "A sunset over the mountains"
+  - path: banner.png
+---
+
+Post content here.
+```
+
+After publishing, the entire directory is moved to `sent/` (or `failed/`).
+
+### Frontmatter fields
+
 - `platforms` (required): one or more of `bluesky`, `mastodon`, `linkedin`
 - `scheduledAt` (optional): ISO 8601 timestamp. The post will wait in the queue until this time. Omit for immediate publishing.
+- `images` (optional): array of image attachments. Each entry has `path` (relative to the post directory) and optional `alt` text. Max 4 images. Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`. Bluesky enforces a 1MB limit per image.
 
 ## Setup
 
@@ -143,6 +176,7 @@ docker run -d \
 - **Raw fetch for LinkedIn** — it's one API call, no SDK needed.
 - **Plaintext for Bluesky and LinkedIn** — both platforms handle their own formatting. Mastodon gets HTML.
 - **Failed posts preserve errors** — error details are written into the file's frontmatter so you can inspect and retry.
+- **Image uploads** — subdirectory posts can include images uploaded natively to each platform's API. Flat `.md` files still work for text-only posts.
 
 ## License
 
