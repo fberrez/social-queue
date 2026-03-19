@@ -1,6 +1,6 @@
 # social-queue
 
-Minimal social media publishing queue powered by markdown files. Drop a `.md` file into `queue/`, and it gets published to Bluesky, Mastodon, and LinkedIn automatically.
+Minimal social media publishing queue powered by markdown files. Drop a `.md` file into `queue/`, and it gets published to Bluesky, Mastodon, LinkedIn, Medium, Dev.to, and Substack automatically.
 
 No database. No HTTP server. No UI. Just files.
 
@@ -17,7 +17,7 @@ queue/    ->    [worker polls every 60s]    ->    sent/
 
 ## Post format
 
-### Text-only post (flat file)
+### Social post (flat file)
 
 ```markdown
 ---
@@ -29,6 +29,22 @@ scheduledAt: 2026-03-14T10:00:00Z  # optional, omit for immediate
 ---
 
 Post content here. Supports **markdown**.
+```
+
+### Blog post
+
+Blog platforms (Medium, Dev.to, Substack) require a `title` field. You can target both social and blog platforms in the same post — social platforms ignore the title.
+
+```markdown
+---
+platforms:
+  - medium
+  - devto
+  - substack
+title: "Why Posterous Was Ahead of Its Time"
+---
+
+Long-form **markdown** content here...
 ```
 
 ### Post with images (subdirectory)
@@ -61,7 +77,8 @@ After publishing, the entire directory is moved to `sent/` (or `failed/`).
 
 ### Frontmatter fields
 
-- `platforms` (required): one or more of `bluesky`, `mastodon`, `linkedin`
+- `platforms` (required): one or more of `bluesky`, `mastodon`, `linkedin`, `medium`, `devto`, `substack`
+- `title` (required for blog platforms): post title for Medium, Dev.to, and Substack. Posts targeting any blog platform without a title are skipped.
 - `scheduledAt` (optional): ISO 8601 timestamp. The post will wait in the queue until this time. Omit for immediate publishing.
 - `images` (optional): array of image attachments. Each entry has `path` (relative to the post directory) and optional `alt` text. Max 4 images. Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`. Bluesky enforces a 1MB limit per image.
 
@@ -106,6 +123,26 @@ LINKEDIN_PERSON_ID=your-person-id
 ```
 
 LinkedIn tokens expire every 60 days. Run `pnpm linkedin:auth` to re-authenticate — it updates `.env`, GitHub secrets, and triggers a redeploy automatically. A weekly GitHub Actions check will open an issue if the token expires.
+
+**Medium** — generate an [integration token](https://medium.com/me/settings/security):
+```
+MEDIUM_INTEGRATION_TOKEN=your-integration-token
+```
+
+**Dev.to** — generate an API key in [Settings > Extensions](https://dev.to/settings/extensions):
+```
+DEVTO_API_KEY=your-api-key
+```
+
+**Substack** — uses SMTP to email posts to your Substack import address. Posts arrive as drafts for review in your Substack dashboard.
+```
+SUBSTACK_SMTP_HOST=smtp.gmail.com
+SUBSTACK_SMTP_PORT=587
+SUBSTACK_SMTP_USER=your-email@gmail.com
+SUBSTACK_SMTP_PASSWORD=your-app-password
+SUBSTACK_FROM_ADDRESS=your-email@gmail.com
+SUBSTACK_TO_ADDRESS=your-substack-import@substack.com
+```
 
 ## Usage
 
@@ -165,6 +202,14 @@ docker run -d \
 | `LINKEDIN_CLIENT_SECRET` | Per platform | — | LinkedIn app client secret |
 | `LINKEDIN_ACCESS_TOKEN` | Per platform | — | LinkedIn OAuth token |
 | `LINKEDIN_PERSON_ID` | Per platform | — | LinkedIn person URN ID |
+| `MEDIUM_INTEGRATION_TOKEN` | Per platform | — | Medium integration token |
+| `DEVTO_API_KEY` | Per platform | — | Dev.to API key |
+| `SUBSTACK_SMTP_HOST` | Per platform | — | SMTP server hostname |
+| `SUBSTACK_SMTP_PORT` | Per platform | — | SMTP server port |
+| `SUBSTACK_SMTP_USER` | Per platform | — | SMTP username |
+| `SUBSTACK_SMTP_PASSWORD` | Per platform | — | SMTP password |
+| `SUBSTACK_FROM_ADDRESS` | Per platform | — | Sender email address |
+| `SUBSTACK_TO_ADDRESS` | Per platform | — | Substack import email address |
 | `POLL_INTERVAL_MS` | No | `60000` | Queue polling interval in ms |
 
 ## Design decisions
@@ -174,9 +219,12 @@ docker run -d \
 - **Docker deploy** — single container, volumes for queue directories, auto-restart on failure.
 - **App password for Bluesky** — simpler than OAuth for a single-user tool.
 - **Raw fetch for LinkedIn** — it's one API call, no SDK needed.
-- **Plaintext for Bluesky and LinkedIn** — both platforms handle their own formatting. Mastodon gets HTML.
+- **Plaintext for Bluesky and LinkedIn** — both platforms handle their own formatting. Mastodon, Medium, and Substack get HTML. Dev.to receives raw markdown.
 - **Failed posts preserve errors** — error details are written into the file's frontmatter so you can inspect and retry.
 - **Image uploads** — subdirectory posts can include images uploaded natively to each platform's API. Flat `.md` files still work for text-only posts.
+- **Blog platforms require a title** — Medium, Dev.to, and Substack posts need a `title` frontmatter field. Posts missing it are skipped with a log message.
+- **Substack via SMTP** — Substack has no public API, so posts are emailed in and arrive as drafts for review. No published URL is returned.
+- **Mixed targeting** — a single post can target both social and blog platforms. Social platforms ignore `title`; blog platforms require it.
 
 ## License
 

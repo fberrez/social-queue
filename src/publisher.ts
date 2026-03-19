@@ -5,6 +5,9 @@ import type { Post, PublishResult } from "./types.js";
 import { publishToBluesky } from "./platforms/bluesky.js";
 import { publishToMastodon } from "./platforms/mastodon.js";
 import { publishToLinkedIn } from "./platforms/linkedin.js";
+import { publishToMedium } from "./platforms/medium.js";
+import { publishToDevto } from "./platforms/devto.js";
+import { publishToSubstack } from "./platforms/substack.js";
 
 async function publishToPlatform(
   post: Post,
@@ -21,6 +24,15 @@ async function publishToPlatform(
     case "linkedin":
       if (!config.linkedin) throw new Error("LinkedIn not configured");
       return publishToLinkedIn(post.content, config.linkedin, post.images);
+    case "medium":
+      if (!config.medium) throw new Error("Medium not configured");
+      return publishToMedium(post.content, post.title!, config.medium);
+    case "devto":
+      if (!config.devto) throw new Error("Dev.to not configured");
+      return publishToDevto(post.content, post.title!, config.devto);
+    case "substack":
+      if (!config.substack) throw new Error("Substack not configured");
+      return publishToSubstack(post.content, post.title!, config.substack);
   }
 }
 

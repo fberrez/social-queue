@@ -1,4 +1,4 @@
-export type Platform = "bluesky" | "mastodon" | "linkedin";
+export type Platform = "bluesky" | "mastodon" | "linkedin" | "medium" | "devto" | "substack";
 
 export interface ImageAttachment {
   filePath: string; // absolute path on disk
@@ -13,6 +13,7 @@ export interface Post {
   platforms: Platform[];
   scheduledAt?: Date;
   raw: string;
+  title?: string;
   images: ImageAttachment[];
   postDir?: string; // set when post is in a subdirectory
 }

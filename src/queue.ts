@@ -8,7 +8,8 @@ const QUEUE_DIR = path.resolve("queue");
 const SENT_DIR = path.resolve("sent");
 const FAILED_DIR = path.resolve("failed");
 
-const VALID_PLATFORMS: Platform[] = ["bluesky", "mastodon", "linkedin"];
+const VALID_PLATFORMS: Platform[] = ["bluesky", "mastodon", "linkedin", "medium", "devto", "substack"];
+const BLOG_PLATFORMS: Platform[] = ["medium", "devto", "substack"];
 
 const loggedScheduled = new Set<string>();
 
@@ -105,12 +106,20 @@ export async function getPendingPosts(): Promise<Post[]> {
       }
     }
 
+    const title: string | undefined = typeof data.title === "string" ? data.title : undefined;
+    const hasBlogPlatform = platforms.some((p) => BLOG_PLATFORMS.includes(p));
+    if (hasBlogPlatform && !title) {
+      console.log(`[queue] skipping ${filename}: title is required for blog platforms (${BLOG_PLATFORMS.join(", ")})`);
+      continue;
+    }
+
     posts.push({
       filename,
       content: content.trim(),
       platforms,
       scheduledAt,
       raw,
+      title,
       images,
       postDir,
     });

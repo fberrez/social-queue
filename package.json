@@ -18,10 +18,12 @@
     "@atproto/api": "^0.19.3",
     "dotenv": "^17.3.1",
     "gray-matter": "^4.0.3",
-    "megalodon": "^10.2.4"
+    "megalodon": "^10.2.4",
+    "nodemailer": "^8.0.3"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "@types/nodemailer": "^7.0.11",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

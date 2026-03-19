@@ -15,6 +15,20 @@ interface Config {
     accessToken: string;
     personId: string;
   } | null;
+  medium: {
+    integrationToken: string;
+  } | null;
+  devto: {
+    apiKey: string;
+  } | null;
+  substack: {
+    smtpHost: string;
+    smtpPort: number;
+    smtpUser: string;
+    smtpPassword: string;
+    fromAddress: string;
+    toAddress: string;
+  } | null;
   pollIntervalMs: number;
 }
 
@@ -63,10 +77,36 @@ export function loadConfig(): Config {
     };
   });
 
+  const medium = loadPlatformConfig("medium", () => {
+    return {
+      integrationToken: requireEnv("MEDIUM_INTEGRATION_TOKEN"),
+    };
+  });
+
+  const devto = loadPlatformConfig("devto", () => {
+    return {
+      apiKey: requireEnv("DEVTO_API_KEY"),
+    };
+  });
+
+  const substack = loadPlatformConfig("substack", () => {
+    return {
+      smtpHost: requireEnv("SUBSTACK_SMTP_HOST"),
+      smtpPort: parseInt(requireEnv("SUBSTACK_SMTP_PORT"), 10),
+      smtpUser: requireEnv("SUBSTACK_SMTP_USER"),
+      smtpPassword: requireEnv("SUBSTACK_SMTP_PASSWORD"),
+      fromAddress: requireEnv("SUBSTACK_FROM_ADDRESS"),
+      toAddress: requireEnv("SUBSTACK_TO_ADDRESS"),
+    };
+  });
+
   return {
     bluesky,
     mastodon,
     linkedin,
+    medium,
+    devto,
+    substack,
     pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS || "60000", 10),
   };
 }
