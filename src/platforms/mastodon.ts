@@ -1,8 +1,8 @@
+import fs from "node:fs";
 import generator from "megalodon";
 import type { Config } from "../config.js";
 import type { ImageAttachment, PublishResult } from "../types.js";
 import { toPlaintext } from "../markdown.js";
-import { readImageFile } from "../images.js";
 
 export async function publishToMastodon(
   content: string,
@@ -16,9 +16,8 @@ export async function publishToMastodon(
   // Upload images if any
   const mediaIds: string[] = [];
   for (const image of images) {
-    const data = await readImageFile(image);
-    const buffer = Buffer.from(data);
-    const attachment = await client.uploadMedia(buffer, {
+    const stream = fs.createReadStream(image.filePath);
+    const attachment = await client.uploadMedia(stream, {
       description: image.alt,
     });
     mediaIds.push(attachment.data.id);
