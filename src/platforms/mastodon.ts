@@ -17,9 +17,8 @@ export async function publishToMastodon(
   const mediaIds: string[] = [];
   for (const image of images) {
     const data = await readImageFile(image);
-    const blob = new Blob([data], { type: image.mimeType });
-    const file = new File([blob], image.filename, { type: image.mimeType });
-    const attachment = await client.uploadMedia(file, {
+    const buffer = Buffer.from(data);
+    const attachment = await client.uploadMedia(buffer, {
       description: image.alt,
     });
     mediaIds.push(attachment.data.id);
